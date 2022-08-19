@@ -1,0 +1,84 @@
+---
+title: "Using R for calculating Premium"
+author: "Indira Aryal"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+# Required Package
+
+This method install package if its not install other wise load. Remember to install pacman package
+
+```{r}
+pacman::p_load(dplyr,tidyr,readxl)
+
+
+```
+
+# Data Reading and Cleaning
+
+Most of the time, Rates of premium are in triangular shape which needs to be converted into column wise tabular data
+
+```{r}
+endowment= read_excel("endowment.xlsx")
+
+df<- endowment %>%
+  pivot_longer(cols = 2:ncol(endowment),
+               names_to = "term",values_to = "rate") 
+
+colnames(df)<-c("age","term","rate")
+df <- df %>%
+  group_by(age,term) %>%
+  distinct(.keep_all = T) %>%
+  mutate(term=as.integer(term)) %>%
+  ungroup()
+
+
+```
+
+# Create a function to return rate
+
+For this project, i have created simple function with out considering age limit, term factor in my function.But in case if some one wants, it is possible
+
+```{r}
+
+premium_rate= function(age1,term1){
+  
+     df %>%
+      filter(age == age1 & term == term1 )-> df1
+
+    return(df1$rate)
+}
+
+```
+
+# Create dummy data
+
+Now lets see if our function works or not and return rate is correct or not.
+
+```{r}
+# example 1
+premium_rate(16,9)
+
+#example 2
+age1=c(16,19,21,20)
+term1=c(9,9,12,17)
+SA=c(100000,200000,300000,500000)
+
+df3<- data.frame(age1,term1,SA)
+head(df3)
+
+df3 <- df3 %>%
+  mutate(rate=premium_rate(age1 = (age1),term1 = (term1)),
+         premium=rate*SA/1000)
+
+head(df3)
+```
